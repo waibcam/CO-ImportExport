@@ -13,6 +13,11 @@ function sendPlayer(origin, msg) {
 function export_character(msg) {
 	var json_export = [];
 
+	// Toutes les Macros
+	var macros = findObjs({
+		_type: 'macro'
+	});
+
 	if (msg.selected !== undefined) {
 		var all_characters = [];
 		_.each(msg.selected, function(selection) {
@@ -66,10 +71,13 @@ function export_character(msg) {
 						});
 						export_character.abilities = [];
 						_.each(abilities, function(ability, i) {
+
+							var action = ability.get('action');
+
 							export_character.abilities.push({
 								name: ability.get('name'),
 								description: ability.get('description'),
-								action: ability.get('action'),
+								action: action,
 								istokenaction: ability.get('istokenaction')
 							});
 						});
@@ -177,7 +185,7 @@ function import_character() {
 					_.each(notes, function(line, i) {
 						if (i == 0) {
 							character.name = line.trim();
-              if (character.name.indexOf('(') !== -1) character.name = character.name.split('(')[0];
+							if (character.name.indexOf('(') !== -1) character.name = character.name.split('(')[0];
 							new_character = createObj("character", {
 								name: character.name,
 							});
