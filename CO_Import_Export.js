@@ -201,6 +201,13 @@ function import_character() {
 		name: 'COImport',
 	});
 
+	// Toutes les personnages
+	var existing_characters = findObjs({
+		_type: 'character'
+	});
+
+	var Added_Characters = [];
+
 	import_handouts.forEach(function(import_handout, i) {
 		import_handout.get('notes', function(notes) { // asynchronous
 			try {
@@ -208,38 +215,51 @@ function import_character() {
 
 				_.each(all_characters, function(character_data) {
 					var character = character_data.character;
-					var new_character = createObj("character", {
-						name: character.name,
-						avatar: character.avatar
+
+					// On recherche si un personnage existe déja avec le même nom
+					// En cas, on ne l'ajoute pas
+					var character_exists = existing_characters.filter(function(obj) {
+						return (obj.get('name').trim() == character.name.trim());
 					});
-					new_character.set('notes', character.notes.replace(/\n/g, '<br>'));
-					new_character.set('gmnotes', character.gmnotes.replace(/\n/g, '<br>'));
-					new_character.set('bio', character.bio.replace(/\n/g, '<br>'));
 
-					var charId = new_character.get('id');
-
-					var attributes = character_data.attributes;
-					_.each(attributes, function(attribute, i) {
-						var new_attribute = createObj("attribute", {
-							_characterid: charId,
-							name: attribute.name,
-							current: attribute.current,
-							max: attribute.max
+					if (character_exists.length > 0) {
+						// Un personnage avec le même nom existe déja.
+						sendChat('COIE', '/w gm ' + character.name + ' existe déjà. Import annulé.');
+					} else {
+						// Aucun personnage avec le même nom n'existe => On peut l'ajouter
+						var new_character = createObj("character", {
+							name: character.name,
+							avatar: character.avatar
 						});
-					});
+						new_character.set('notes', character.notes.replace(/\n/g, '<br>'));
+						new_character.set('gmnotes', character.gmnotes.replace(/\n/g, '<br>'));
+						new_character.set('bio', character.bio.replace(/\n/g, '<br>'));
 
-					var abilities = character_data.abilities;
-					_.each(abilities, function(ability, i) {
-						var new_ability = createObj("ability", {
-							_characterid: charId,
-							name: ability.name,
-							description: ability.description,
-							action: ability.action,
-							istokenaction: ability.istokenaction
+						var charId = new_character.get('id');
+
+						var attributes = character_data.attributes;
+						_.each(attributes, function(attribute, i) {
+							var new_attribute = createObj("attribute", {
+								_characterid: charId,
+								name: attribute.name,
+								current: attribute.current,
+								max: attribute.max
+							});
 						});
-					});
 
-					sendChat('COIE', '/w gm Import ' + character.name + ' effectué.');
+						var abilities = character_data.abilities;
+						_.each(abilities, function(ability, i) {
+							var new_ability = createObj("ability", {
+								_characterid: charId,
+								name: ability.name,
+								description: ability.description,
+								action: ability.action,
+								istokenaction: ability.istokenaction
+							});
+						});
+
+						Added_Characters.push(character.name);
+					}
 				});
 			} catch (e) {
 				if (notes.indexOf('FOR ') !== -1 && notes.indexOf('DEX ') !== -1 && notes.indexOf('CON ') !== -1 && notes.indexOf('INT ') !== -1 && notes.indexOf('SAG') !== -1 && notes.indexOf('CHA ') !== -1 && notes.indexOf('DEF ') !== -1 && notes.indexOf('PV ') !== -1 && notes.indexOf('Init ') !== -1) {
@@ -390,14 +410,10 @@ function import_character() {
 
 								if (armenom.indexOf('m)') !== -1) {
 									tmp = armenom.split('m)');
-									log(tmp);
 									armenom = armenom.split('(')[0];
 									tmp = tmp[0].trim().split(' ');
-									log(tmp);
 									tmp = tmp[tmp.length - 1].split('(');
-									log(tmp);
 									armeportee = parseInt(tmp[1].trim().replace(/[^0-9\.]/g, ''), 10);
-									log(armeportee);
 								}
 
 								armenom = armenom.trim();
@@ -483,7 +499,6 @@ function import_character() {
 						}
 					});
 
-					//log(attributes);
 					_.each(attributes, function(attribute, i) {
 						var new_attribute = createObj("attribute", {
 							_characterid: charId,
@@ -493,11 +508,15 @@ function import_character() {
 						});
 					});
 
-					sendChat('COIE', '/w gm Import ' + character.name + ' effectué.');
+					Added_Characters.push(character.name);
 				} else sendChat('COIE', '/w gm Import impossible. Le contenu du handout COImport semble incorrect...');
 			}
 		});
 	});
+
+	if (Added_Characters.length > 0) {
+		sendChat('COIE', '/w gm Import de ' + Added_Characters.join(', ') + ' effectué.');
+	}
 }
 
 function check_command(msg) {
