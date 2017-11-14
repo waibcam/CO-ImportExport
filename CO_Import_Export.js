@@ -416,7 +416,7 @@ function import_character() {
 									armeportee = parseInt(tmp[1].trim().replace(/[^0-9\.]/g, ''), 10);
 								}
 
-								armenom = armenom.trim();
+								armenom = cpt + ' ' + armenom.trim();
 
 								if (armeportee > 0) {
 									armeatk = '@{ATKTIR}';
