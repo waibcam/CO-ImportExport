@@ -1,5 +1,5 @@
 var COIE_Loaded = false;
-var script_version = 0.1;
+var script_version = 0.2;
 
 function sendPlayer(origin, msg) {
 	var dest = origin;
@@ -120,7 +120,31 @@ function export_character(msg) {
 						export_character.abilities = [];
 						_.each(abilities, function(ability, i) {
 
-							var action = ability.get('action');
+							var action = ability.get('action').trim();
+
+							if (action.indexOf('#') !== -1) {
+								// Cette commande contient au moins une macro donc on va le remplacer par sa commande (action)
+								var command_words = action.split("\n");
+								//chaque ligne
+								_.each(command_words, function(line, j) {
+									var line_words = line.split(' ');
+									//chaque mot
+									_.each(line_words, function(word, k) {
+										// si le mot commence par #
+										if (word.startsWith('#')) {
+											// on recherche une macro qui s'appelle pareil (sans le #)
+											var this_macro = macros.filter(function(obj) {
+												return (obj.get('name').trim() == word.substring(1));
+											});
+											if (this_macro.length == 1) {
+												// macro trouvé
+												// on replace dans la commande initiale
+												action = action.replace(word, this_macro[0].get('action'));
+											}
+										}
+									});
+								});
+							}
 
 							export_character.abilities.push({
 								name: ability.get('name'),
