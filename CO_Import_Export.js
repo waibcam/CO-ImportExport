@@ -10,6 +10,53 @@ function sendPlayer(origin, msg) {
 	sendChat('COIE', '/w "' + dest + '" ' + msg);
 }
 
+function turn_action(msg) {
+  if (msg.selected !== undefined) {
+		var all_characters = [];
+		_.each(msg.selected, function(selection) {
+			var token = getObj("graphic", selection._id);
+			if (token !== undefined) {
+        var character = getObj('character', token.get('represents'));
+        if (character !== undefined) {
+          all_characters.push(character);
+        }
+      }
+		});
+
+		var cpt = 0;
+
+		_.each(all_characters, function(character) {
+      var charId = character.get('_id');
+      var abilities = findObjs({
+        _type: 'ability',
+        _characterid: charId,
+      });
+      
+      var turn_action = abilities.filter(function(obj) {
+        var attrName = obj.get('name');
+        return (obj.get('name') == '#TurnAction#');
+      });
+      
+      if (turn_action.length == 0) {
+        var action = '';
+        
+        _.each(abilities, function(ability, i) {
+          action += '%' + ability.get('name') + '\n';
+          ability.set('istokenaction', false);
+        });
+        
+        var new_ability = createObj("ability", {
+          _characterid: charId,
+          name: '#TurnAction#',
+          description: '',
+          action: action,
+          istokenaction: false
+        });
+      } 
+    });
+  }
+}
+
 function export_character(msg) {
 	var json_export = [];
 
@@ -22,11 +69,12 @@ function export_character(msg) {
 		var all_characters = [];
 		_.each(msg.selected, function(selection) {
 			var token = getObj("graphic", selection._id);
-			var character = getObj('character', token.get('represents'));
-
-			if (character !== undefined) {
-				all_characters.push(character);
-			}
+      if (token !== undefined) {
+        var character = getObj('character', token.get('represents'));
+        if (character !== undefined) {
+          all_characters.push(character);
+        }
+      }
 		});
 
 		var cpt = 0;
@@ -438,6 +486,9 @@ function check_command(msg) {
 			return;
 		case "!co-import":
 			import_character();
+			return;
+    case "!co-turn_action":
+			turn_action(msg);
 			return;
 		default:
 			return;
