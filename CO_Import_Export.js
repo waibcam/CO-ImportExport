@@ -211,7 +211,7 @@ function import_character() {
 	import_handouts.forEach(function(import_handout, i) {
 		import_handout.get('notes', function(notes) { // asynchronous
 			try {
-				var all_characters = JSON.parse(notes.replace(/<br>/g, '').trim());
+				var all_characters = JSON.parse(notes.replace(/(<br>|<p>|<\/p>)/g, '').trim());
 
 				_.each(all_characters, function(character_data) {
 					var character = character_data.character;
