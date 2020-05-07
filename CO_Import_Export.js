@@ -106,13 +106,23 @@ function export_character(msg) {
 							_characterid: charId,
 						});
 						export_character.attributes = [];
+						var isTtypePersonnagePresent = false; 
 						_.each(attributes, function(attribute, i) {
+							var attName = attribute.get('name');							
+							isTtypePersonnagePresent = (attName === 'type_personnage');							
 							export_character.attributes.push({
 								name: attribute.get('name'),
 								current: attribute.get('current'),
 								max: attribute.get('max')
 							});
 						});
+						if(!isTtypePersonnagePresent) {
+							export_character.attributes.push({
+								name: 'type_personnage',
+								current: 'PJ',
+								max: ''
+							});
+						}
 						var abilities = findObjs({
 							_type: 'ability',
 							_characterid: charId,
@@ -236,9 +246,11 @@ function import_character() {
 						new_character.set('bio', character.bio.replace(/\n/g, '<br>'));
 
 						var charId = new_character.get('id');
-
+						var isTtypePersonnagePresent = false; 
 						var attributes = character_data.attributes;
 						_.each(attributes, function(attribute, i) {
+							var attName = attribute.name;
+							isTtypePersonnagePresent = (attName === 'type_personnage');
 							var new_attribute = createObj("attribute", {
 								_characterid: charId,
 								name: attribute.name,
@@ -246,7 +258,14 @@ function import_character() {
 								max: attribute.max
 							});
 						});
-
+						if(!isTtypePersonnagePresent) {
+							createObj("attribute", {
+								_characterid: charId,
+								name: 'type_personnage',
+								current: 'PJ',
+								max: ''
+							});
+						}
 						var abilities = character_data.abilities;
 						_.each(abilities, function(ability, i) {
 							var new_ability = createObj("ability", {
