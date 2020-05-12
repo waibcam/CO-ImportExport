@@ -93,13 +93,13 @@ function export_character(msg) {
 			};
 
 			character.get("notes", function(notes) { // asynchronous
-				if (notes.length > 0 && notes != 'null') export_character.character.notes = notes.replace(/<br>/g, '\n');
+				if (notes.length > 0 && notes != 'null') export_character.character.notes = notes.replace(/(<br>|<p>)/gm, '\n').replace(/(<\/p>)/g,'');
 
 				character.get("gmnotes", function(gmnotes) { // asynchronous
-					if (gmnotes.length > 0 && gmnotes != 'null') export_character.character.gmnotes = gmnotes.replace(/<br>/g, '\n');
+					if (gmnotes.length > 0 && gmnotes != 'null') export_character.character.gmnotes = gmnotes.replace(/(<br>|<p>)/gm, '\n').replace(/(<\/p>)/g,'');
 
 					character.get("bio", function(bio) { // asynchronous
-						if (bio.length > 0 && bio != 'null') export_character.character.bio = bio.replace(/<br>/g, '\n');
+						if (bio.length > 0 && bio != 'null') export_character.character.bio = bio.replace(/(<br>|<p>)/gm, '\n').replace(/(<\/p>)/g,'');
 
 						var attributes = findObjs({
 							_type: 'attribute',
