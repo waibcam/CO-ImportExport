@@ -300,6 +300,7 @@ function import_character() {
 						});
             if (token) {
               setDefaultTokenForCharacter(new_character, token);
+              token.remove();
             }
 						if(!isTtypePersonnagePresent) {
 							createObj("attribute", {
