@@ -37,7 +37,7 @@ function turn_action(msg) {
 				return (obj.get('name') == '#TurnAction#');
 			});
 
-			if (turn_action.length == 0) {
+			if (turn_action.length === 0) {
 				var action = '';
 
 				_.each(abilities, function(ability, i) {
@@ -80,7 +80,7 @@ function export_character(msg) {
 		var cpt = 0;
 
 		_.each(all_characters, function(character) {
-			var charId = character.get('_id')
+			var charId = character.get('_id');
 			var character_name = character.get('name');
 			var export_character = {};
 
@@ -100,11 +100,33 @@ function export_character(msg) {
 
 					character.get("bio", function(bio) { // asynchronous
 						if (bio.length > 0 && bio != 'null') export_character.character.bio = bio.replace(/(<br>|<p>)/gm, '\n').replace(/(<\/p>)/g,'');
+              character.get('_defaulttoken', function(defaultToken) {
 
 						var attributes = findObjs({
 							_type: 'attribute',
 							_characterid: charId,
 						});
+                if (defaultToken !== '' && defaultToken !== null) {
+                  export_character.defaultToken = defaultToken;
+                  var tokenFields = JSON.parse(defaultToken);
+                  var attrLinked;
+                  if (tokenFields.bar1_link) {
+                    attrLinked = attributes.find(function(a) {
+                      return a.id == tokenFields.bar1_link;
+                    });
+                    if (attrLinked) {
+                      export_character.bar1_link = attrLinked.get('name');
+                    }
+                  }
+                  if (tokenFields.bar2_link) {
+                    attrLinked = attributes.find(function(a) {
+                      return a.id == tokenFields.bar2_link;
+                    });
+                    if (attrLinked) {
+                      export_character.bar2_link = attrLinked.get('name');
+                    }
+                  }
+                }
 						export_character.attributes = [];
 						var isTtypePersonnagePresent = false; 
 						_.each(attributes, function(attribute, i) {
@@ -181,6 +203,7 @@ function export_character(msg) {
 						}
 
 					});
+					});
 				});
 			});
 		});
@@ -210,14 +233,18 @@ function import_character() {
 		_type: 'handout',
 		name: 'COImport',
 	});
-
-	// Toutes les personnages
+  if (import_handouts.length === 0) return;
+	// Tous les personnages
 	var existing_characters = findObjs({
 		_type: 'character'
 	});
-
+  //On cherche une page valide pour y créer les tokens si besoin
+        var pageId;
+        var pages = findObjs({
+          _type: 'page'
+        });
+        if (pages.length > 0) pageId = pages[0].id;
 	var Added_Characters = [];
-
 	import_handouts.forEach(function(import_handout, i) {
 		import_handout.get('notes', function(notes) { // asynchronous
 			try {
@@ -225,13 +252,11 @@ function import_character() {
 
 				_.each(all_characters, function(character_data) {
 					var character = character_data.character;
-
 					// On recherche si un personnage existe déja avec le même nom
 					// En cas, on ne l'ajoute pas
 					var character_exists = existing_characters.filter(function(obj) {
 						return (obj.get('name').trim() == character.name.trim());
 					});
-
 					if (character_exists.length > 0) {
 						// Un personnage avec le même nom existe déja.
 						sendChat('COIE', '/w gm ' + character.name + ' existe déjà. Import annulé.');
@@ -246,6 +271,14 @@ function import_character() {
 						new_character.set('bio', character.bio.replace(/\n/g, '<br>'));
 
 						var charId = new_character.get('id');
+            //Gestion du token par défaut
+            var token;
+            if (pageId && character_data.defaultToken) {
+              var tokenFields = JSON.parse(character_data.defaultToken);
+              tokenFields.pageid = pageId;
+              tokenFields.represents = charId;
+              token = createObj('graphic', tokenFields);
+            }
 						var isTtypePersonnagePresent = false; 
 						var attributes = character_data.attributes;
 						_.each(attributes, function(attribute, i) {
@@ -257,7 +290,18 @@ function import_character() {
 								current: attribute.current,
 								max: attribute.max
 							});
+              if (token) {
+                if (attName == character_data.bar1_link) {
+                  token.set('bar1_link', new_attribute.id);
+                } else if (attName == character_data.bar2_link) {
+                  token.set('bar2_link', new_attribute.id);
+                }
+              }
 						});
+            if (token) {
+              setDefaultTokenForCharacter(new_character, token);
+              token.remove();
+            }
 						if(!isTtypePersonnagePresent) {
 							createObj("attribute", {
 								_characterid: charId,
@@ -294,7 +338,7 @@ function import_character() {
 						attack_distance = 0,
 						tmp, NIVEAU;
 					_.each(notes, function(line, i) {
-						if (i == 0) {
+						if (i === 0) {
 							character.name = line.trim();
 							if (character.name.indexOf('(') !== -1) character.name = character.name.split('(')[0];
 							new_character = createObj("character", {
@@ -449,18 +493,18 @@ function import_character() {
 									if (armedmde.indexOf('+') !== -1) {
 										tmp = armedmde.split('+');
 										armedmde = tmp[0].trim();
-										armedmdiv = tmp[1].trim()
+										armedmdiv = tmp[1].trim();
 									} else if (armedmde.indexOf('-') !== -1) {
 										tmp = armedmde.split('-');
 										armedmde = tmp[0].trim();
-										armedmdiv = -tmp[1].trim()
+										armedmdiv = -tmp[1].trim();
 									}
 								}
 
 								armeatkdiv = parseInt(armeatkdiv + ''.replace(/[^0-9\.]/g, ''), 10);
 								armedmdiv = parseInt(armedmdiv + ''.replace(/[^0-9\.]/g, ''), 10);
 
-								if (armeportee == 0) {
+								if (armeportee === 0) {
 									armeatkdiv = armeatkdiv - attack_contact;
 									armedmdiv = armedmdiv - FOR_MOD;
 								} else {
