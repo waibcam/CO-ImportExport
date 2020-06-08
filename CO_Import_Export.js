@@ -267,8 +267,14 @@ var COImportExport = COImportExport || function() {
                 name: character.name,
                 avatar: character.avatar
               });
-              new_character.set('gmnotes', decodeURIComponent(character.gmnotes));
-              new_character.set('bio', decodeURIComponent(character.bio));
+              if (character.notes) {
+                //dans ce cas, on avait l'ancienne version du script, sans encodage
+                new_character.set('gmnotes', character.gmnotes.replace(/\n/g, '<br>'));
+                new_character.set('bio', character.bio.replace(/\n/g, '<br>'));
+              } else {
+                new_character.set('gmnotes', decodeURIComponent(character.gmnotes));
+                new_character.set('bio', decodeURIComponent(character.bio));
+              }
               var charId = new_character.get('id');
               //Gestion du token par défaut
               var token;
